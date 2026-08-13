@@ -66,7 +66,13 @@ echo "==> Checking the archive is clean"
 # end-of-central-directory record — that is what breaks installation. Assert
 # the file ends with the EOCD (no signature trailer) so a corrupt bundle can
 # never reach the submission form.
-if tail -c 32 "$BUNDLE" | grep -q "MCPB_SIG_END"; then
+#
+# -a is load-bearing: the input is 32 raw bytes containing NULs, and BSD grep
+# (macOS) classifies that as binary and exits 1 even when the pattern MATCHES.
+# Without it this guard silently passes on exactly the corrupt bundle it exists
+# to catch — verified against a signed bundle whose final bytes are literally
+# MCPB_SIG_END.
+if tail -c 32 "$BUNDLE" | grep -qa "MCPB_SIG_END"; then
 	echo "    ERROR: bundle carries an appended signature trailer." >&2
 	echo "    Claude Desktop will refuse to install it. Rebuild without signing." >&2
 	exit 1
