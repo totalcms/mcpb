@@ -50,11 +50,23 @@ function readConfig(name: string): string {
 	return raw;
 }
 
+/**
+ * Zero-config target: the official Total CMS docs connector.
+ *
+ * The manifest declares the same value as the field's default, but that is a
+ * UI hint only - Claude Desktop omits untouched fields from the saved config
+ * and then passes the raw placeholder through. Defaulting here means a user
+ * who installs and changes nothing still gets a working bundle, whatever the
+ * host does with unset fields.
+ */
+const DEFAULT_MCP_URL = "https://totalcms.co/mcp";
+
 function main(): void {
-	const rawUrl = readConfig("MCP_URL");
-	if (rawUrl === "") {
-		fail(
-			"MCP_URL environment variable is required (e.g. https://your-site.example/mcp). Refusing to start.",
+	const configuredUrl = readConfig("MCP_URL");
+	const rawUrl = configuredUrl === "" ? DEFAULT_MCP_URL : configuredUrl;
+	if (configuredUrl === "") {
+		process.stderr.write(
+			`[totalcms-mcpb] no endpoint configured - using the official docs connector (${DEFAULT_MCP_URL})\n`,
 		);
 	}
 

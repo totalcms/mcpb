@@ -33,9 +33,9 @@
 		"mcpUrl": {
 			"type": "string",
 			"title": "Total CMS MCP endpoint",
-			"description": "Your site's MCP endpoint - copy it from Settings -> MCP in the Total CMS admin. Must be the full https:// endpoint URL (not a bare domain), so subpath and Stacks installs work correctly.",
+			"description": "Your site's MCP endpoint - copy it from Settings -> MCP in the Total CMS admin. Must be the full https:// endpoint URL (not a bare domain), so subpath and Stacks installs work correctly. Leave as-is to use the official Total CMS docs connector.",
 			"default": "https://totalcms.co/mcp",
-			"required": true
+			"required": false
 		},
 		"apiKey": {
 			"type": "string",
