@@ -1,0 +1,12 @@
+node_modules/
+src/
+dist/
+.git/
+.gitignore
+.mcpbignore
+tsconfig.json
+esbuild.config.js
+package-lock.json
+*.log
+.DS_Store
+BUILD-REPORT.md

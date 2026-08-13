@@ -1,0 +1,23 @@
+{
+  "name": "totalcms-mcpb",
+  "version": "0.1.0",
+  "description": "Total CMS desktop extension (MCPB) - a local stdio bridge to a remote Total CMS MCP endpoint.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && node esbuild.config.js && npx @anthropic-ai/mcpb validate manifest.json && npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
+    "pack": "npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
+    "validate": "npx @anthropic-ai/mcpb validate manifest.json"
+  },
+  "author": "Joe Workman",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.0"
+  }
+}

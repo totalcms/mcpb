@@ -1,0 +1,139 @@
+#!/usr/bin/env node
+/**
+ * Total CMS MCPB bridge.
+ *
+ * A hand-rolled stdio <-> streamable-HTTP proxy. Claude Desktop spawns this
+ * process and speaks MCP over stdio to it; this process forwards every
+ * JSON-RPC message (requests, responses, notifications - initialize,
+ * tools/*, resources/*, prompts/*, everything) verbatim to a remote Total
+ * CMS MCP endpoint over streamable HTTP, and forwards the remote's messages
+ * back over stdio.
+ *
+ * Why not mcp-remote? See BUILD-REPORT.md - mcp-remote unconditionally runs
+ * OAuth discovery on startup and, on any HTTP 401 from the remote, launches
+ * a browser-based OAuth authorization flow with no flag to disable it. Total
+ * CMS uses a plain API-key header, not OAuth; a bad key must surface as a
+ * clean 401 to the MCP client, not hang behind a browser popup. So this is a
+ * small hand-rolled proxy built directly on `@modelcontextprotocol/sdk`.
+ */
+
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+
+function fail(message: string): never {
+	// stdout is reserved for JSON-RPC framing - all diagnostics go to stderr.
+	process.stderr.write(`[totalcms-mcpb] ${message}\n`);
+	process.exit(1);
+}
+
+function main(): void {
+	const rawUrl = process.env.MCP_URL;
+	if (!rawUrl || rawUrl.trim() === "") {
+		fail(
+			"MCP_URL environment variable is required (e.g. https://your-site.example/mcp). Refusing to start.",
+		);
+	}
+
+	let url: URL;
+	try {
+		url = new URL(rawUrl);
+	} catch {
+		fail(`MCP_URL is not a valid URL: "${rawUrl}". Refusing to start.`);
+	}
+
+	if (url.protocol !== "https:") {
+		fail(
+			`MCP_URL must use https:// (got "${url.protocol}//"). Plain-text credentials on the wire are not allowed. Refusing to start.`,
+		);
+	}
+
+	// API_KEY is optional. When present, never log its value.
+	const apiKey = process.env.API_KEY?.trim() ?? "";
+	const headers: Record<string, string> = {};
+	if (apiKey !== "") {
+		headers["X-API-Key"] = apiKey;
+	}
+
+	process.stderr.write(
+		`[totalcms-mcpb] connecting to ${url.origin}${url.pathname} (api key ${apiKey ? "configured" : "not set"})\n`,
+	);
+
+	const remote = new StreamableHTTPClientTransport(url, {
+		requestInit: { headers },
+	});
+
+	const local = new StdioServerTransport();
+
+	// --- local (Claude Desktop) -> remote (Total CMS) ---
+	local.onmessage = (message: JSONRPCMessage) => {
+		remote.send(message).catch((err: unknown) => {
+			const errorMessage = err instanceof Error ? err.message : String(err);
+			process.stderr.write(`[totalcms-mcpb] remote send failed: ${errorMessage}\n`);
+
+			// If this was a request (has an id), the caller is waiting on a
+			// response. Surface a clean JSON-RPC error instead of hanging.
+			const asRecord = message as unknown as Record<string, unknown>;
+			if ("id" in asRecord && asRecord.id !== undefined && asRecord.id !== null) {
+				const errorResponse: JSONRPCMessage = {
+					jsonrpc: "2.0",
+					id: asRecord.id as string | number,
+					error: {
+						code: -32000,
+						message: errorMessage,
+					},
+				} as JSONRPCMessage;
+				local.send(errorResponse).catch(() => {
+					/* local channel is gone; nothing more we can do */
+				});
+			}
+		});
+	};
+
+	// --- remote (Total CMS) -> local (Claude Desktop) ---
+	remote.onmessage = (message: JSONRPCMessage) => {
+		local.send(message).catch((err: unknown) => {
+			const errorMessage = err instanceof Error ? err.message : String(err);
+			process.stderr.write(`[totalcms-mcpb] local send failed: ${errorMessage}\n`);
+		});
+	};
+
+	local.onerror = (err: Error) => {
+		process.stderr.write(`[totalcms-mcpb] local transport error: ${err.message}\n`);
+	};
+
+	remote.onerror = (err: Error) => {
+		process.stderr.write(`[totalcms-mcpb] remote transport error: ${err.message}\n`);
+	};
+
+	local.onclose = () => {
+		remote.close().catch(() => {});
+		process.exit(0);
+	};
+
+	remote.onclose = () => {
+		// A closed SSE stream on the remote side does not necessarily mean the
+		// session is over (streamable HTTP opens/closes streams per request).
+		// Only the local stdio channel closing ends the process.
+	};
+
+	Promise.all([local.start(), remote.start()])
+		.then(() => {
+			process.stderr.write("[totalcms-mcpb] bridge ready\n");
+		})
+		.catch((err: unknown) => {
+			const errorMessage = err instanceof Error ? err.message : String(err);
+			fail(`failed to start bridge: ${errorMessage}`);
+		});
+
+	process.on("SIGINT", () => {
+		remote.close().catch(() => {});
+		process.exit(0);
+	});
+	process.on("SIGTERM", () => {
+		remote.close().catch(() => {});
+		process.exit(0);
+	});
+}
+
+main();

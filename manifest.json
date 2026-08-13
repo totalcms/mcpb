@@ -1,0 +1,68 @@
+{
+	"$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+	"manifest_version": "0.4",
+	"name": "totalcms",
+	"display_name": "Total CMS",
+	"version": "0.1.0",
+	"description": "Connect Claude to any Total CMS site - search docs, browse content, and (with an API key) manage your site.",
+	"icon": "icon.png",
+	"long_description": "Total CMS is a flat-file PHP CMS with a built-in MCP server. This bundle is a local bridge that connects Claude Desktop to any Total CMS site's MCP endpoint. Out of the box it points at the official Total CMS docs site, so you can ask Claude questions about Total CMS itself with no setup. Point it at your own site's MCP endpoint (Settings -> MCP in the admin) to browse and search your content, and add a Total CMS API key for authenticated, admin-level access - all without needing an OAuth login flow or exposing custom headers through the Connectors directory.",
+	"author": {
+		"name": "Joe Workman",
+		"url": "https://totalcms.co"
+	},
+	"license": "proprietary",
+	"homepage": "https://totalcms.co",
+	"documentation": "https://docs.totalcms.co",
+	"support": "https://totalcms.co/support",
+	"server": {
+		"type": "node",
+		"entry_point": "server/index.js",
+		"mcp_config": {
+			"command": "node",
+			"args": [
+				"${__dirname}/server/index.js"
+			],
+			"env": {
+				"MCP_URL": "${user_config.mcpUrl}",
+				"API_KEY": "${user_config.apiKey}"
+			}
+		}
+	},
+	"user_config": {
+		"mcpUrl": {
+			"type": "string",
+			"title": "Total CMS MCP endpoint",
+			"description": "Your site's MCP endpoint - copy it from Settings -> MCP in the Total CMS admin. Must be the full https:// endpoint URL (not a bare domain), so subpath and Stacks installs work correctly.",
+			"default": "https://totalcms.co/mcp",
+			"required": true
+		},
+		"apiKey": {
+			"type": "string",
+			"title": "API key (optional)",
+			"description": "Optional: a Total CMS API key for authenticated, admin-level access. Leave empty to browse public content only. Stored securely in your OS keychain.",
+			"sensitive": true,
+			"required": false
+		}
+	},
+	"keywords": [
+		"cms",
+		"content",
+		"totalcms",
+		"flat-file"
+	],
+	"privacy_policies": [
+		"https://totalcms.co/privacy"
+	],
+	"compatibility": {
+		"claude_desktop": ">=0.11.0",
+		"platforms": [
+			"darwin",
+			"win32",
+			"linux"
+		],
+		"runtimes": {
+			"node": ">=18.0.0"
+		}
+	}
+}
