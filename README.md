@@ -102,7 +102,9 @@ Desktop.
   stderr, or any log.
 - `MCP_URL` must be `https://` or the process refuses to start.
 
-## Open items
+## License
 
-See `BUILD-REPORT.md` for the full list (icon, signing, clean-machine
-install test, submission form).
+Source code is [MIT licensed](LICENSE). The Total CMS name, flame logo, and
+the bundled `icon.png` are trademarks and are not covered by that grant — you
+may fork the code, but a redistributed version must not present itself as
+published or endorsed by Total CMS.
