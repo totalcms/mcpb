@@ -27,9 +27,32 @@ function fail(message: string): never {
 	process.exit(1);
 }
 
+/**
+ * Read an install-time config value, treating an unsubstituted manifest
+ * placeholder as absent.
+ *
+ * Claude Desktop substitutes `${user_config.<key>}` in manifest env values,
+ * but when an OPTIONAL field is left blank it passes the placeholder through
+ * literally rather than an empty string. Without this guard a blank API key
+ * arrives as the string "${user_config.apiKey}", looks like a configured
+ * credential, gets sent upstream, and earns a 401 that surfaces to the user
+ * as "unable to connect to extension server".
+ */
+function readConfig(name: string): string {
+	const raw = process.env[name]?.trim() ?? "";
+	if (/^\$\{.*\}$/.test(raw)) {
+		process.stderr.write(
+			`[totalcms-mcpb] ${name} was left blank at install (received an unsubstituted placeholder) - treating as unset\n`,
+		);
+		return "";
+	}
+
+	return raw;
+}
+
 function main(): void {
-	const rawUrl = process.env.MCP_URL;
-	if (!rawUrl || rawUrl.trim() === "") {
+	const rawUrl = readConfig("MCP_URL");
+	if (rawUrl === "") {
 		fail(
 			"MCP_URL environment variable is required (e.g. https://your-site.example/mcp). Refusing to start.",
 		);
@@ -49,7 +72,7 @@ function main(): void {
 	}
 
 	// API_KEY is optional. When present, never log its value.
-	const apiKey = process.env.API_KEY?.trim() ?? "";
+	const apiKey = readConfig("API_KEY");
 	const headers: Record<string, string> = {};
 	if (apiKey !== "") {
 		headers["X-API-Key"] = apiKey;
