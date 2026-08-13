@@ -4,3 +4,9 @@ server/*.js
 server/*.js.map
 *.log
 .DS_Store
+
+# Signing material. `mcpb sign --self-signed` writes cert.pem/key.pem into the
+# working directory — never commit them, and never commit a real signing key.
+*.pem
+cert.pem
+key.pem

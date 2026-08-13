@@ -10,3 +10,5 @@ package-lock.json
 *.log
 .DS_Store
 BUILD-REPORT.md
+scripts/
+*.pem

@@ -6,9 +6,10 @@
 	"type": "module",
 	"scripts": {
 		"typecheck": "tsc --noEmit",
-		"build": "npm run typecheck && node esbuild.config.js && npx @anthropic-ai/mcpb validate manifest.json && npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
-		"pack": "npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
-		"validate": "npx @anthropic-ai/mcpb validate manifest.json"
+		"build": "npm run typecheck && node esbuild.config.js && command npx @anthropic-ai/mcpb validate manifest.json && command npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
+		"release": "bash scripts/release.sh",
+		"pack": "command npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
+		"validate": "command npx @anthropic-ai/mcpb validate manifest.json"
 	},
 	"author": "Joe Workman",
 	"license": "MIT",
