@@ -9,7 +9,11 @@
 	"long_description": "Total CMS is a flat-file PHP CMS with a built-in MCP server. This bundle is a local bridge that connects Claude Desktop to any Total CMS site's MCP endpoint. Out of the box it points at the official Total CMS docs site, so you can ask Claude questions about Total CMS itself with no setup. Point it at your own site's MCP endpoint (Settings -> MCP in the admin) to browse and search your content, and add a Total CMS API key for authenticated, admin-level access - all without needing an OAuth login flow or exposing custom headers through the Connectors directory.",
 	"author": {
 		"name": "Joe Workman",
-		"url": "https://totalcms.co"
+		"url": "https://github.com/joeworkman"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/totalcms/mcpb"
 	},
 	"license": "MIT",
 	"tools_generated": true,
