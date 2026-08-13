@@ -30,7 +30,24 @@ fi
 
 echo
 echo "==> Signing"
-if [ -n "${MCPB_CERT:-}" ] && [ -n "${MCPB_KEY:-}" ]; then
+# DISABLED BY DEFAULT — mcpb 2.1.x signing produces a bundle Claude Desktop
+# refuses to install. `sign` appends the signature as a trailer AFTER the zip's
+# end-of-central-directory record (the file ends with a literal MCPB_SIG_END
+# marker). Lenient readers (unzip, python zipfile) skip trailing bytes and call
+# the archive fine, but Claude Desktop's stricter parser rejects it:
+#
+#   Failed to preview extension: Invalid comment length. Expected: 2264.
+#   Found: 0. Are there extra bytes at the end of the file?
+#
+# 2264 is exactly the number of bytes sign added. The tool's own `verify` and
+# `info` also report "not signed" on files it just signed. Reproduced on 2.1.1
+# and 2.1.2, with --self-signed and with an openssl-generated cert/key.
+#
+# Set MCPB_SIGN=1 to sign anyway once upstream is fixed.
+if [ "${MCPB_SIGN:-0}" != "1" ]; then
+	echo "    skipped — mcpb 2.1.x signing corrupts the bundle for Claude Desktop"
+	echo "    (set MCPB_SIGN=1 to override; see the comment in this script)"
+elif [ -n "${MCPB_CERT:-}" ] && [ -n "${MCPB_KEY:-}" ]; then
 	echo "    certificate: $MCPB_CERT"
 	"${MCPB[@]}" sign "$BUNDLE" --cert "$MCPB_CERT" --key "$MCPB_KEY" \
 		${MCPB_INTERMEDIATE:+--intermediate $MCPB_INTERMEDIATE}
@@ -44,19 +61,17 @@ else
 fi
 
 echo
-echo "==> Verifying"
-# Informational only. As of mcpb 2.1.1/2.1.2, `sign` reports success and grows
-# the bundle by ~2.3KB (a signature IS written) while `verify` and `info` both
-# report "not signed" — reproduced with --self-signed AND with a real
-# openssl-generated cert/key pair, so it is not specific to this bundle or to
-# the self-signed path. Treat a failure here as a warning rather than aborting
-# the release; confirm the signature in Claude Desktop at install time.
-if ! "${MCPB[@]}" verify "$BUNDLE"; then
-	echo
-	echo "    WARNING: verify could not confirm the signature."
-	echo "    Known mcpb 2.1.x sign/verify mismatch — check the installed"
-	echo "    extension in Claude Desktop before relying on this."
+echo "==> Checking the archive is clean"
+# The failure mode we care about is trailing bytes after the zip's
+# end-of-central-directory record — that is what breaks installation. Assert
+# the file ends with the EOCD (no signature trailer) so a corrupt bundle can
+# never reach the submission form.
+if tail -c 32 "$BUNDLE" | grep -q "MCPB_SIG_END"; then
+	echo "    ERROR: bundle carries an appended signature trailer." >&2
+	echo "    Claude Desktop will refuse to install it. Rebuild without signing." >&2
+	exit 1
 fi
+echo "    no signature trailer — installable"
 
 echo
 echo "==> Done: $BUNDLE ($(du -h "$BUNDLE" | cut -f1))"
