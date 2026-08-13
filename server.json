@@ -1,0 +1,21 @@
+{
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+	"name": "io.github.totalcms/total-cms",
+	"title": "Total CMS",
+	"description": "Connects Claude to a self-hosted Total CMS site, local or remote. Search collections, read version-matched documentation, and manage schemas and content with an API key.",
+	"repository": {
+		"url": "https://github.com/totalcms/mcpb",
+		"source": "github"
+	},
+	"version": "0.1.0",
+	"packages": [
+		{
+			"registryType": "mcpb",
+			"identifier": "https://github.com/totalcms/mcpb/releases/download/v0.1.0/totalcms.mcpb",
+			"fileSha256": "7518efffc285107b83a8588d37da9d3c31b95d057b8275887937aefcc305a7dc",
+			"transport": {
+				"type": "stdio"
+			}
+		}
+	]
+}
