@@ -2,7 +2,7 @@
 	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
 	"name": "io.github.totalcms/total-cms",
 	"title": "Total CMS",
-	"description": "Connects Claude to a self-hosted Total CMS site, local or remote. Search collections, read version-matched documentation, and manage schemas and content with an API key.",
+	"description": "Connect Claude to a self-hosted Total CMS site: search content, read docs, manage with an API key.",
 	"repository": {
 		"url": "https://github.com/totalcms/mcpb",
 		"source": "github"
