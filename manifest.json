@@ -12,6 +12,8 @@
 		"url": "https://totalcms.co"
 	},
 	"license": "MIT",
+	"tools_generated": true,
+	"prompts_generated": true,
 	"homepage": "https://totalcms.co",
 	"documentation": "https://docs.totalcms.co",
 	"support": "https://totalcms.co/support",
