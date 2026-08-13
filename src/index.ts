@@ -77,9 +77,26 @@ function main(): void {
 		fail(`MCP_URL is not a valid URL: "${rawUrl}". Refusing to start.`);
 	}
 
-	if (url.protocol !== "https:") {
+	// HTTPS everywhere except loopback.
+	//
+	// A Total CMS install on localhost is a first-class target for this bridge —
+	// a developer running the site locally, or a self-hosted install reached
+	// through an SSH tunnel — and it is the case the MCPB format exists for.
+	// Requiring https there would refuse the most common local setup, since
+	// nobody terminates TLS on a dev site.
+	//
+	// The rule this relaxes protects credentials in transit, and loopback
+	// traffic never reaches a wire, so the risk it guards against is absent.
+	// The same reasoning is why browsers treat http://localhost as a secure
+	// context and OAuth permits loopback redirects over http. Every other host
+	// still requires https: an API key crossing a network in clear text is not
+	// a trade worth offering.
+	const host = url.hostname.replace(/^\[|\]$/g, "");
+	const isLoopback = host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".localhost");
+
+	if (url.protocol !== "https:" && !(url.protocol === "http:" && isLoopback)) {
 		fail(
-			`MCP_URL must use https:// (got "${url.protocol}//"). Plain-text credentials on the wire are not allowed. Refusing to start.`,
+			`MCP_URL must use https:// (got "${url.protocol}//" for "${url.hostname}"). Plain http is allowed only for localhost. Refusing to start.`,
 		);
 	}
 
