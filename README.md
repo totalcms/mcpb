@@ -97,6 +97,7 @@ Desktop.
 
 ```bash
 npm run bump 0.3.0                  # rewrites the version in all four files
+# add a "## [0.3.0] - YYYY-MM-DD" section to CHANGELOG.md
 git commit -am "Release v0.3.0"
 git tag v0.3.0 && git push origin master v0.3.0
 ```
@@ -106,7 +107,12 @@ bundle, attaches it to a GitHub release, and publishes the new version to the
 [MCP Registry](https://registry.modelcontextprotocol.io) as
 `io.github.totalcms/total-cms`.
 
-Two things worth knowing:
+The GitHub release notes are the matching `CHANGELOG.md` section, so that
+file is where a release gets described — write it before tagging. A missing
+section warns and falls back to generated notes rather than failing the build;
+a release should never be blocked because its prose was not written.
+
+Two more things worth knowing:
 
 - **The registry is a separate system from GitHub Releases.** People who
   installed from the MCP directory get updates from the registry, not from

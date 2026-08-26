@@ -49,6 +49,7 @@ for path, pairs in edits.items():
 
 print(f"\n{old} -> {new}")
 print("\nNext:")
+print(f'  add a "## [{new}] - <today>" section to CHANGELOG.md — it becomes the release notes')
 print(f'  git commit -am "Release v{new}"')
 print(f"  git tag v{new} && git push origin master v{new}")
 print("\nThe Release workflow builds, publishes the GitHub release, and updates")

@@ -13,3 +13,4 @@ BUILD-REPORT.md
 scripts/
 *.pem
 .github/
+CHANGELOG.md

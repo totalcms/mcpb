@@ -78,6 +78,12 @@ jobs:
       - name: Build
         run: npm run release
 
+      # Release notes come from CHANGELOG.md so the changelog is the single
+      # place a release is described, rather than something maintained beside
+      # auto-generated commit lists that say the same thing worse. A missing
+      # section warns and falls back — a release must never be blocked because
+      # its prose was not written.
+      #
       # Idempotent so a re-run, or a workflow_dispatch against a hand-made
       # release, replaces the asset instead of erroring.
       - name: Publish GitHub release
@@ -85,10 +91,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${TAG#v}"
+
+          awk -v want="## [$VERSION]" '
+            index($0, want) == 1 { found = 1; next }
+            found && /^## \[/     { exit }
+            found                 { print }
+          ' CHANGELOG.md > notes.md
+
+          if [ -s notes.md ] && grep -q '[^[:space:]]' notes.md; then
+            NOTES=(--notes-file notes.md)
+          else
+            echo "::warning::CHANGELOG.md has no '## [$VERSION]' section — using generated notes"
+            NOTES=(--generate-notes)
+          fi
+
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/totalcms.mcpb --clobber
+            gh release edit "$TAG" "${NOTES[@]}"
           else
-            gh release create "$TAG" dist/totalcms.mcpb --title "$TAG" --generate-notes
+            gh release create "$TAG" dist/totalcms.mcpb --title "$TAG" "${NOTES[@]}"
           fi
 
       # fileSha256 must describe the artifact that was actually uploaded, and
