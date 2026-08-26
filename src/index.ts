@@ -21,6 +21,12 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 
+/**
+ * User-Agent this bridge sends upstream. Keep the version in step with
+ * package.json / manifest.json on release.
+ */
+const USER_AGENT = "totalcms-mcpb/0.2.0";
+
 function fail(message: string): never {
 	// stdout is reserved for JSON-RPC framing - all diagnostics go to stderr.
 	process.stderr.write(`[totalcms-mcpb] ${message}\n`);
@@ -102,7 +108,21 @@ function main(): void {
 
 	// API_KEY is optional. When present, never log its value.
 	const apiKey = readConfig("API_KEY");
-	const headers: Record<string, string> = {};
+
+	// Identify ourselves. Undici - node's built-in fetch, which the SDK's
+	// streamable-HTTP transport uses - defaults User-Agent to the bare string
+	// "node", and shared-hosting WAF rulesets block that outright as a
+	// scripted-client signature. Observed live on a cPanel host 2026-08-25:
+	// every request from this bridge was refused while curl and Claude
+	// Desktop's own connector, hitting the identical endpoint with the
+	// identical API key, both passed. The bridge looked broken; only its
+	// User-Agent was.
+	//
+	// Sent via requestInit so the SDK merges it into the POSTs and the SSE
+	// GET alike (see _commonHeaders in streamableHttp.js).
+	const headers: Record<string, string> = {
+		"User-Agent": USER_AGENT,
+	};
 	if (apiKey !== "") {
 		headers["X-API-Key"] = apiKey;
 	}

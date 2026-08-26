@@ -7,12 +7,12 @@
 		"url": "https://github.com/totalcms/mcpb",
 		"source": "github"
 	},
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"packages": [
 		{
 			"registryType": "mcpb",
-			"identifier": "https://github.com/totalcms/mcpb/releases/download/v0.1.0/totalcms.mcpb",
-			"fileSha256": "7518efffc285107b83a8588d37da9d3c31b95d057b8275887937aefcc305a7dc",
+			"identifier": "https://github.com/totalcms/mcpb/releases/download/v0.2.0/totalcms.mcpb",
+			"fileSha256": "3d900c5705184db7f75307136c3f1b0fe09c07826e111f6bb500c0964c9b6169",
 			"transport": {
 				"type": "stdio"
 			}
