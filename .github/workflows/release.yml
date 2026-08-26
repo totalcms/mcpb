@@ -1,0 +1,113 @@
+# Push a version tag, get a release.
+#
+#   npm run bump 0.3.0        # rewrites the four files that carry the version
+#   git commit -am "…" && git tag v0.3.0 && git push origin master v0.3.0
+#
+# From there this workflow builds the bundle, attaches it to a GitHub release,
+# and publishes the new version to the official MCP Registry
+# (registry.modelcontextprotocol.io, entry io.github.totalcms/total-cms).
+#
+# The registry step is the whole reason this file exists: it is a separate
+# system from GitHub Releases, it is easy to forget, and forgetting it means
+# everyone who installed from the MCP directory silently stays on the old
+# version. v0.1.0 -> v0.2.0 was missed exactly that way.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # Lets you (re)publish a tag that already exists — including one released
+  # by hand before this workflow existed.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and publish, e.g. v0.2.0"
+        required: true
+
+permissions:
+  contents: write # create the GitHub release and upload the bundle
+  id-token: write # OIDC token for the MCP Registry — no stored secret needed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "lts/*"
+
+      - run: npm ci
+
+      # The version lives in four files. Three are metadata, but USER_AGENT is
+      # compiled into the bundle, so a miss there ships a binary claiming the
+      # wrong version. Fail before building rather than after publishing.
+      - name: Check the tag matches the source
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${TAG#v}"
+          fail=0
+          check() {
+            if [ "$2" != "$VERSION" ]; then
+              echo "::error::$1 is '$2', expected '$VERSION' (from tag $TAG)"
+              fail=1
+            fi
+          }
+          check package.json  "$(jq -r .version package.json)"
+          check manifest.json "$(jq -r .version manifest.json)"
+          check server.json   "$(jq -r .version server.json)"
+          check "src/index.ts USER_AGENT" \
+            "$(sed -n 's/^const USER_AGENT = "totalcms-mcpb\/\(.*\)";$/\1/p' src/index.ts)"
+
+          EXPECTED_URL="https://github.com/${{ github.repository }}/releases/download/$TAG/totalcms.mcpb"
+          ACTUAL_URL="$(jq -r '.packages[0].identifier' server.json)"
+          if [ "$ACTUAL_URL" != "$EXPECTED_URL" ]; then
+            echo "::error::server.json download URL is '$ACTUAL_URL', expected '$EXPECTED_URL'"
+            fail=1
+          fi
+
+          [ "$fail" -eq 0 ] || { echo "Run 'npm run bump $VERSION' and commit before tagging."; exit 1; }
+
+      - name: Build
+        run: npm run release
+
+      # Idempotent so a re-run, or a workflow_dispatch against a hand-made
+      # release, replaces the asset instead of erroring.
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/totalcms.mcpb --clobber
+          else
+            gh release create "$TAG" dist/totalcms.mcpb --title "$TAG" --generate-notes
+          fi
+
+      # fileSha256 must describe the artifact that was actually uploaded, and
+      # a zip embeds timestamps — so a CI build never hashes identically to a
+      # local one. The value committed in server.json is therefore only ever a
+      # record of the last local build; this is the one that counts.
+      - name: Stamp fileSha256 for the uploaded bundle
+        run: |
+          SHA="$(sha256sum dist/totalcms.mcpb | cut -d' ' -f1)"
+          jq --arg s "$SHA" '.packages[0].fileSha256 = $s' server.json > server.tmp
+          mv server.tmp server.json
+          echo "fileSha256 = $SHA"
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to the MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to the MCP Registry
+        run: ./mcp-publisher publish

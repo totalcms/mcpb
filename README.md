@@ -93,6 +93,35 @@ Desktop.
 
 `npm run typecheck` and `npm run validate` are available standalone.
 
+## Releasing
+
+```bash
+npm run bump 0.3.0                  # rewrites the version in all four files
+git commit -am "Release v0.3.0"
+git tag v0.3.0 && git push origin master v0.3.0
+```
+
+Pushing the tag is the whole release. The `Release` workflow builds the
+bundle, attaches it to a GitHub release, and publishes the new version to the
+[MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.totalcms/total-cms`.
+
+Two things worth knowing:
+
+- **The registry is a separate system from GitHub Releases.** People who
+  installed from the MCP directory get updates from the registry, not from
+  the release page — publishing one without the other leaves them stranded on
+  the old version. That is why the workflow does both, and why it is worth
+  never publishing a release by hand.
+- **`fileSha256` in `server.json` is stamped by CI**, because a zip embeds
+  timestamps and a CI build never hashes identically to a local one. The value
+  committed to git is only a record of the last local build; ignore it.
+
+Authentication to the registry is GitHub OIDC, so there is no secret to
+rotate. To re-publish a tag that already exists — or one released before this
+workflow existed — run the `Release` workflow manually from the Actions tab
+and give it the tag.
+
 ## Security notes
 
 - Zero filesystem access, zero subprocess spawns, outbound HTTPS to exactly
