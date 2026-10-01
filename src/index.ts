@@ -25,7 +25,7 @@ import { Bridge } from "./bridge.ts";
  * User-Agent this bridge sends upstream. Keep the version in step with
  * package.json / manifest.json on release.
  */
-const USER_AGENT = "totalcms-mcpb/0.2.0";
+const USER_AGENT = "totalcms-mcpb/0.2.1";
 
 function fail(message: string): never {
 	// stdout is reserved for JSON-RPC framing - all diagnostics go to stderr.

@@ -4,11 +4,19 @@ All notable changes to the Total CMS desktop extension (MCPB) will be documented
 
 ## [Unreleased]
 
-Nothing affecting the extension itself. Releasing is now automated: pushing a
-version tag builds the bundle, publishes the GitHub release, and updates the
-[MCP Registry](https://registry.modelcontextprotocol.io) entry, which is a
-separate system that directory installs actually update from and which v0.2.0
-had to be published to after the fact. See **Releasing** in the README.
+## [0.2.1] - 2026-10-01
+
+### Fixed
+
+- **Every tool call failed with `-32000` until the extension was restarted, after an hour idle or after saving MCP settings on the site**: Total CMS ends an MCP session after an hour without use, and on purpose whenever its MCP configuration changes (a collection's MCP tools saved, an extension toggled), so clients pick up the new tool list. The server then answers the old session id with `404 Session not found or has expired`, and the spec requires the client to start a new session. Claude Desktop sees this bridge as a local stdio server whose session never ends, so it never re-initializes, and the bridge forwarded verbatim — so the dead session id was resent forever and every call failed. The bridge now keeps Desktop's `initialize` request; on a session `404` it opens a fresh connection, replays `initialize` and `notifications/initialized` itself, resends the call that failed, and tells Desktop the tool, prompt and resource lists may have changed. Concurrent failures share one new session, and a `404` before any session existed (a wrong URL) is still reported rather than retried
+
+### Added
+
+- **Setup for other MCP clients in the README**: the bridge is a plain stdio MCP server, so Cursor, VS Code, Windsurf and other clients that launch local servers can run `server/index.js` from the release bundle with Node 18 or later. The README now shows the configuration
+
+### Changed
+
+- **Releasing is automated**: pushing a version tag builds the bundle, publishes the GitHub release, and updates the [MCP Registry](https://registry.modelcontextprotocol.io) entry, which is a separate system that directory installs actually update from and which v0.2.0 had to be published to after the fact. See **Releasing** in the README
 
 ## [0.2.0] - 2026-08-26
 
