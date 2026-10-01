@@ -19,7 +19,7 @@
 
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import { Bridge } from "./bridge.ts";
 
 /**
  * User-Agent this bridge sends upstream. Keep the version in step with
@@ -131,81 +131,33 @@ function main(): void {
 		`[totalcms-mcpb] connecting to ${url.origin}${url.pathname} (api key ${apiKey ? "configured" : "not set"})\n`,
 	);
 
-	const remote = new StreamableHTTPClientTransport(url, {
-		requestInit: { headers },
-	});
+	const log = (message: string): void => {
+		process.stderr.write(`[totalcms-mcpb] ${message}\n`);
+	};
 
 	const local = new StdioServerTransport();
+	const bridge = new Bridge({
+		local,
+		createRemote: () => new StreamableHTTPClientTransport(url, { requestInit: { headers } }),
+		log,
+	});
 
-	// --- local (Claude Desktop) -> remote (Total CMS) ---
-	local.onmessage = (message: JSONRPCMessage) => {
-		remote.send(message).catch((err: unknown) => {
-			const errorMessage = err instanceof Error ? err.message : String(err);
-			process.stderr.write(`[totalcms-mcpb] remote send failed: ${errorMessage}\n`);
-
-			// If this was a request (has an id), the caller is waiting on a
-			// response. Surface a clean JSON-RPC error instead of hanging.
-			const asRecord = message as unknown as Record<string, unknown>;
-			if ("id" in asRecord && asRecord.id !== undefined && asRecord.id !== null) {
-				const errorResponse: JSONRPCMessage = {
-					jsonrpc: "2.0",
-					id: asRecord.id as string | number,
-					error: {
-						code: -32000,
-						message: errorMessage,
-					},
-				} as JSONRPCMessage;
-				local.send(errorResponse).catch(() => {
-					/* local channel is gone; nothing more we can do */
-				});
-			}
-		});
+	// Only the local stdio channel closing ends the process.
+	const shutdown = (): void => {
+		bridge.close().finally(() => process.exit(0));
 	};
 
-	// --- remote (Total CMS) -> local (Claude Desktop) ---
-	remote.onmessage = (message: JSONRPCMessage) => {
-		local.send(message).catch((err: unknown) => {
-			const errorMessage = err instanceof Error ? err.message : String(err);
-			process.stderr.write(`[totalcms-mcpb] local send failed: ${errorMessage}\n`);
-		});
-	};
-
-	local.onerror = (err: Error) => {
-		process.stderr.write(`[totalcms-mcpb] local transport error: ${err.message}\n`);
-	};
-
-	remote.onerror = (err: Error) => {
-		process.stderr.write(`[totalcms-mcpb] remote transport error: ${err.message}\n`);
-	};
-
-	local.onclose = () => {
-		remote.close().catch(() => {});
-		process.exit(0);
-	};
-
-	remote.onclose = () => {
-		// A closed SSE stream on the remote side does not necessarily mean the
-		// session is over (streamable HTTP opens/closes streams per request).
-		// Only the local stdio channel closing ends the process.
-	};
-
-	Promise.all([local.start(), remote.start()])
-		.then(() => {
-			process.stderr.write("[totalcms-mcpb] bridge ready\n");
-		})
+	bridge
+		.start()
+		.then(() => log("bridge ready"))
 		.catch((err: unknown) => {
 			const errorMessage = err instanceof Error ? err.message : String(err);
 			fail(`failed to start bridge: ${errorMessage}`);
 		});
 
-	process.on("SIGINT", () => {
-		remote.close().catch(() => {});
-		process.exit(0);
-	});
-	process.on("SIGTERM", () => {
-		remote.close().catch(() => {});
-		process.exit(0);
-	});
+	local.onclose = shutdown;
+	process.on("SIGINT", shutdown);
+	process.on("SIGTERM", shutdown);
 }
 
 main();

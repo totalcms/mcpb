@@ -6,7 +6,8 @@
 	"type": "module",
 	"scripts": {
 		"typecheck": "tsc --noEmit",
-		"build": "npm run typecheck && node esbuild.config.js && command npx @anthropic-ai/mcpb validate manifest.json && command npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
+		"test": "node --test \"test/*.test.ts\"",
+		"build": "npm run typecheck && npm test && node esbuild.config.js && command npx @anthropic-ai/mcpb validate manifest.json && command npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
 		"release": "bash scripts/release.sh",
 		"bump": "bash scripts/bump.sh",
 		"pack": "command npx @anthropic-ai/mcpb pack . dist/totalcms.mcpb",
