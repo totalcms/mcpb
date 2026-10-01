@@ -55,6 +55,40 @@ fields does Total CMS support?" with no configuration.
    public content. Leave this field empty to keep Claude limited to public,
    anonymous access.
 
+### Other MCP clients
+
+The bridge is a plain stdio MCP server, so any client that launches local
+servers (Cursor, VS Code, Windsurf, and others) can run it with Node 18 or
+later. A client that supports remote servers with custom headers can skip
+the bridge and connect to your site's `/mcp` endpoint directly.
+
+1. Download `totalcms.mcpb` from the
+   [latest release](https://github.com/totalcms/mcpb/releases/latest). It is
+   a zip archive: unzip it anywhere. `server/index.js` inside is
+   self-contained and needs no `npm install`.
+2. Add it to your client's MCP configuration:
+
+   ```json
+   {
+     "mcpServers": {
+       "totalcms": {
+         "command": "node",
+         "args": ["/path/to/totalcms/server/index.js"],
+         "env": {
+           "MCP_URL": "https://yoursite.com/mcp",
+           "API_KEY": ""
+         }
+       }
+     }
+   }
+   ```
+
+   Leave `MCP_URL` empty to use the Total CMS docs server, and leave
+   `API_KEY` empty for public, anonymous access.
+
+To build from source instead, `npm install && npm run build` writes
+`server/index.js`.
+
 ## How it works
 
 `server/index.js` is a small stdio MCP server that Claude Desktop spawns
