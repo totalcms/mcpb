@@ -183,4 +183,4 @@ and give it the tag.
 Source code is [MIT licensed](LICENSE). The Total CMS name, flame logo, and
 the bundled `icon.png` are trademarks and are not covered by that grant — you
 may fork the code, but a redistributed version must not present itself as
-published or endorsed by Total CMS.
+published or endorsed by Total CMS. See [TRADEMARKS.md](TRADEMARKS.md).
