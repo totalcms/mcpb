@@ -4,6 +4,17 @@ All notable changes to the Total CMS desktop extension (MCPB) will be documented
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-24
+
+### Security
+
+- **Dependencies updated for published advisories**: the MCP SDK and the packages it pulls in are updated to patched versions: `@modelcontextprotocol/sdk` 1.32.2, `zod` 4.6.7, `fast-uri` 3.1.9, `hono` 4.13.13, `proxy-addr` 2.0.8, `body-parser` 2.4.0, `qs` 6.16.1 and `ip-address` 10.7.4. `npm audit` reports no vulnerabilities. The SDK is bundled into `server/index.js`, so only a new bundle gets the fixes. No change to how the bridge behaves
+
+### Changed
+
+- **`LICENSE` is the plain MIT text**: the trademark notice that followed it moved to `TRADEMARKS.md`, unchanged, so GitHub and directories that read the license (Glama among them) recognize it as MIT. The bundle still ships the notice beside `icon.png`, which it covers
+- **`glama.json`** names the maintainer for the [Glama](https://glama.ai/mcp/servers/totalcms/mcpb) listing. It stays out of the bundle
+
 ## [0.2.2] - 2026-10-23
 
 ### Changed
