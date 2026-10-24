@@ -44,16 +44,23 @@ fields does Total CMS support?" with no configuration.
 3. Reinstall/reconnect. Claude can now browse and search your site's public
    collections.
 
-### Authenticated (admin) access
+### Authenticated access
 
-1. Generate a Total CMS API key for your site (Settings -> API Keys, or your
-   preferred key-issuing flow).
+1. Create a Total CMS API key for your site in **Settings → API Keys**. What
+   the key's **Scopes** allow is exactly what Claude can do:
+   - **Full admin access:** All endpoints (`*`) with every HTTP method.
+   - **Limited access:** add `/mcp` to the key's paths, plus the collections it
+     should reach, such as `/api/collections/blog`. `/mcp` on its own opens the
+     endpoint but reaches no content. The key's HTTP methods decide its tools:
+     a GET-only key connects read-only. A limited key reaches a collection only
+     when that collection's MCP access is **API keys** or wider. See
+     [Keys over MCP](https://docs.totalcms.co/apis/api-keys/#keys-over-mcp).
 2. Paste it into the **API key (optional)** field in the extension settings.
    It's stored in your OS keychain, not in plain text.
-3. Claude now has admin-level access to your site's MCP tools (schema
-   management, templates, site info, cache clearing, etc.) in addition to
-   public content. Leave this field empty to keep Claude limited to public,
-   anonymous access.
+3. Claude now reaches what the key allows, in addition to public content.
+   With a full admin key that includes schema management, templates, site
+   info and cache clearing. Leave the field empty to keep Claude limited to
+   public, anonymous access.
 
 ### Other MCP clients
 

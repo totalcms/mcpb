@@ -4,6 +4,12 @@ All notable changes to the Total CMS desktop extension (MCPB) will be documented
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-23
+
+### Changed
+
+- **API key setup matches Total CMS 3.6.3**: Since 3.6.3 an API key is limited over MCP exactly as it is over REST: its paths decide which collections it reaches and its HTTP methods decide its tools. The README and the API key setting promised admin-level access from any key, so a key created with only `/mcp` in its paths connected and then found no content. They now explain that full admin access needs an All endpoints key with every method, and how to scope a limited key. No change to the bridge itself
+
 ## [0.2.1] - 2026-10-01
 
 ### Fixed

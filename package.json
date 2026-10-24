@@ -1,6 +1,6 @@
 {
 	"name": "totalcms-mcpb",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Total CMS desktop extension (MCPB) - a local stdio bridge to a remote Total CMS MCP endpoint.",
 	"private": true,
 	"type": "module",
