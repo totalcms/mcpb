@@ -14,6 +14,7 @@ scripts/
 *.pem
 .github/
 CHANGELOG.md
+glama.json
 
 # Tests run at build time; the bundle ships only server/index.js
 test/
